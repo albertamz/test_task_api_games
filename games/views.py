@@ -1,29 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from users.models import UserToken
+from users.permissions import HasValidToken
 from .models import GameResult
 from .services import GameLogic
 from .serializers import GameResultSerializer
 
 
-def get_token_or_error(token_string):
-    try:
-        token_obj = UserToken.objects.get(token=token_string)
-        if not token_obj.is_valid():
-            return None, Response({"error": "Token is expired or inactive"}, status=status.HTTP_403_FORBIDDEN)
-        return token_obj, None
-    except UserToken.DoesNotExist:
-        return None, Response({"error": "Token not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
 class TokenInfoView(APIView):
-    def get(self, request, token):
-        token_obj, error_response = get_token_or_error(token)
-        if error_response:
-            return error_response
+    permission_classes = [HasValidToken]
 
-        user = token_obj.user
+    def get(self, request, token):
+        user = request.token_obj.user
         return Response({
             "user_id": user.id,
             "username": user.username,
@@ -32,17 +20,14 @@ class TokenInfoView(APIView):
 
 
 class TokenRenewView(APIView):
+    permission_classes = [HasValidToken]
+
     def post(self, request, token):
-        token_obj, error_response = get_token_or_error(token)
-        if error_response:
-            return error_response
+        old_token = request.token_obj
+        old_token.is_active = False
+        old_token.save()
 
-        # Деактивировать старый токен
-        token_obj.is_active = False
-        token_obj.save()
-
-        # Создать новый токен
-        new_token = UserToken.objects.create(user=token_obj.user)
+        new_token = old_token.__class__.objects.create(user=old_token.user)
         return Response({
             "new_token": new_token.token,
             "token_expires_at": new_token.expires_at
@@ -50,35 +35,29 @@ class TokenRenewView(APIView):
 
 
 class TokenDeactivateView(APIView):
+    permission_classes = [HasValidToken]
+
     def post(self, request, token):
-        try:
-            token_obj = UserToken.objects.get(token=token)
-        except UserToken.DoesNotExist:
-            return Response({"error": "Token not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        token_obj.is_active = False
-        token_obj.save()
-
-        return Response({"message": "Token deactivated"}, status=status.HTTP_200_OK)
+        request.token_obj.is_active = False
+        request.token_obj.save()
+        return Response({"message": "Token deactivated"})
 
 
 class GamePlayView(APIView):
-    def post(self, request, token):
-        token_obj, error_response = get_token_or_error(token)
-        if error_response:
-            return error_response
+    permission_classes = [HasValidToken]
+    serializer_class = GameResultSerializer
 
-        game_result = GameLogic.play(user=token_obj.user)
-        serializer = GameResultSerializer(game_result)
+    def post(self, request, token):
+        game_result = GameLogic.play(user=request.token_obj.user)
+        serializer = self.serializer_class(game_result)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class GameHistoryView(APIView):
-    def get(self, request, token):
-        token_obj, error_response = get_token_or_error(token)
-        if error_response:
-            return error_response
+    permission_classes = [HasValidToken]
+    serializer_class = GameResultSerializer
 
-        results = GameResult.objects.filter(user=token_obj.user).order_by('-played_at')[:3]
-        serializer = GameResultSerializer(results, many=True)
+    def get(self, request, token):
+        results = GameResult.objects.filter(user=request.token_obj.user).order_by('-played_at')[:3]
+        serializer = self.serializer_class(results, many=True)
         return Response(serializer.data)

@@ -58,7 +58,7 @@ def test_game_play(client, user_and_token):
     response = client.post(f"/game/{token}/play")
     assert response.status_code == 201
     data = response.json()
-    assert 1 <= data["number"] <= 1000
+    assert 1 <= data["random_number"] <= 1000
     assert data["result"] in ["win", "lose"]
     assert isinstance(data["prize"], float)
 
@@ -76,8 +76,6 @@ def test_game_history(client, user_and_token):
     assert isinstance(data, list)
     assert len(data) <= 3
     for item in data:
-        assert "number" in item
+        assert "random_number" in item
         assert "result" in item
         assert "prize" in item
-        assert "played_at" in item
-        assert "win" in item

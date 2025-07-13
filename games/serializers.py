@@ -3,12 +3,8 @@ from .models import GameResult
 
 
 class GameResultSerializer(serializers.ModelSerializer):
-    win = serializers.SerializerMethodField()
     prize = serializers.SerializerMethodField()
-
-    @staticmethod
-    def get_win(obj):
-        return obj.win
+    random_number = serializers.IntegerField(source='number', read_only=True)
 
     @staticmethod
     def get_prize(obj):
@@ -16,4 +12,4 @@ class GameResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GameResult
-        fields = ['number', 'result', 'prize', 'played_at', 'win']
+        fields = ['random_number', 'result', 'prize']
