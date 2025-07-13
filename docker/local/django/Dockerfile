@@ -34,5 +34,5 @@ RUN mkdir logs
 RUN pip install -r requirements.txt
 RUN pip install gunicorn
 
-RUN chmod +x docker/local/start.sh
-ENTRYPOINT ["docker/local/start.sh"]
+RUN chmod +x docker/local/django/start.sh
+ENTRYPOINT ["docker/local/django/start.sh"]

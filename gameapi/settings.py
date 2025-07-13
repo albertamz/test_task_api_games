@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ja(^8n@i9*@g8kf^z-xwvyj&brc9mkr*er-)2o_l&hw6!hrne_'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -81,11 +81,11 @@ WSGI_APPLICATION = 'gameapi.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv("DB_NAME", "game_db"),
-        'USER': os.getenv("DB_USER", "game_user"),
-        'PASSWORD': os.getenv("DB_PASSWORD", "game_pass"),
-        'HOST': os.getenv('DB_HOST', 'db'),
-        'PORT': os.getenv("DB_PORT", "3306"),
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv("DB_PORT"),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
         }

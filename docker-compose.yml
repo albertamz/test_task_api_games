@@ -2,7 +2,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: docker/local/Dockerfile
+      dockerfile: docker/local/django/Dockerfile
     restart: always
     ports:
       - "8000:8000"
@@ -11,27 +11,20 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      - DB_NAME=game_db
-      - DB_USER=game_user
-      - DB_PASSWORD=game_pass
-      - DB_HOST=db
-      - DB_PORT=3306
+    env_file:
+      - .env
 
   db:
     image: mysql:8
     restart: always
     ports:
       - "3960:3306"
-    environment:
-      MYSQL_DATABASE: game_db
-      MYSQL_USER: game_user
-      MYSQL_PASSWORD: game_pass
-      MYSQL_ROOT_PASSWORD: secure_root_password
+    env_file:
+        - .env
     volumes:
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/local/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin --user=$${MYSQL_USER} --password=$${MYSQL_PASSWORD} --host=localhost ping"]
       interval: 5s
       retries: 5
       timeout: 5s
